@@ -1,9 +1,4 @@
-## License: Apache 2.0. See LICENSE file in root directory.
-## Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 
-###############################################
-##      Open CV and Numpy integration        ##
-###############################################
 
 import pyrealsense2 as rs
 import numpy as np
@@ -44,10 +39,11 @@ try:
         key = cv2.waitKey(1) & 0xff
         if key == 27:  # Esc
             cv2.imwrite('C:/Users/jyj98/Desktop/Realsense/Mashroom_right.jpg',images )
-
+            # na
             break
 
 finally:
 
     # Stop streaming
     pipeline.stop()
+print("example")
