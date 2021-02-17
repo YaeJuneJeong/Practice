@@ -20,7 +20,7 @@ depth_sensor = profile.get_device().first_depth_sensor()
 
 laser_pwr = depth_sensor.get_option(rs.option.laser_power)
 print("laser power = ", laser_pwr)
-print(depth_sensor.get_option_range(rs.option.min_distance))
+# print(depth_sensor.get_option_range(rs.option.min_distance))
 # print("laser power range = " , laser_range.min , "~", laser_range.max)
 set_laser = 8
 # depth_sensor.set_option(rs.option.min_distance, 0.25)
@@ -52,15 +52,8 @@ try:
         cv2.imshow(title,color_image)
 
        #
-        # def onMouse(event, x, y, flags, params):
-        #     if event == cv2.EVENT_RBUTTONDOWN:
-        #         depth = depth_image[y,x].astype(float)
-        #         print(y,x)
-        #         distance = depth * depth_scale
-        #         print ("Distance (m): ", distance)
-        #
-        # cv2.setMouseCallback(title,onMouse)
 
+        key  = cv2.waitKey(10)
         key  = cv2.waitKey(10)
         if key == 27:
             cv2.imwrite('C:/Users/jyj98/Desktop/Realsense/color_sensor.jpg',color_image)
