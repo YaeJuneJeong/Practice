@@ -52,8 +52,15 @@ try:
         cv2.imshow(title,color_image)
 
        #
+        def onMouse(event, x, y, flags, params):
+            if event == cv2.EVENT_RBUTTONDOWN:
+                depth = depth_image[y,x].astype(float)
+                print(y,x)
+                distance = depth * depth_scale
+                print ("Distance (m): ", distance)
 
-        key  = cv2.waitKey(10)
+        cv2.setMouseCallback(title,onMouse)
+
         key  = cv2.waitKey(10)
         if key == 27:
             cv2.imwrite('C:/Users/jyj98/Desktop/Realsense/color_sensor.jpg',color_image)
