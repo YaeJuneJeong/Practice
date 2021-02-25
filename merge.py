@@ -10,30 +10,38 @@ import math;
 import json;
 import socketio;
 
-# import pyrealsense2 as rs
-# import numpy as np
-# import cv2
-
-# # Start streaming
-
-# # Create a pipeline
-# pipeline = rs.pipeline()
-# config = rs.config()
-# config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-# config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-# profile = pipeline.start(config)
-
-# depth_sensor = profile.get_device().first_depth_sensor()
-# depth_sensor.set_option(rs.option.depth_units, 0.001)
+import pyrealsense2 as rs
+import numpy as np
+import cv2
 
 # socket 서버 연결
 sio = socketio.Client()
-sio.connect('http://172.26.3.62:3001')
+sio.connect('http://localhost:3001')
 
 
 @sio.on("req_cosdata")
 def socket_data(temp, hum):
     sio.emit("res_cosdata", {"temperature": temp, "humidity": hum})
+
+
+@sio.on("req_video")
+def socket_stream(req):
+    cap = cv2.VideoCapture(0)
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+    ret, fname = cap.read()
+    result, frame = cv2.imencode('.jpg', fname, encode_param)
+    data = base64.b64encode(frame)
+
+    while True:
+        ret, fname = cap.read()
+        result, frame = cv2.imencode('.jpg', fname, encode_param)
+        data = base64.b64encode(frame)
+        sio.emit('req_image', data)
+
+        if req:
+            break
+
+    return
 
 
 SERVER_URL = 'http://54.210.105.132/api'  # 서버 url
@@ -48,7 +56,7 @@ MOTER_ORDER = 'M'  # 3D 촬영 프로토콜
 HOUR = 100  # 온도 데이터 전송 시간 기준값
 WATER_TIME = 0  # 물주는 시간 기준값
 MOTER_TIME = HOUR * 6  # 모터 시간 기준값
-D2_TIME = 0
+D2_TIME = HOUR
 
 water_num = 0
 
@@ -110,7 +118,7 @@ def encode_serial_data(str):
 def start_after():
     global water_num
     global data
-    global pipeline
+    pipeline = None
     global D2_TIME
 
     WATER_TIME = HOUR * 24 / water_num
@@ -151,20 +159,28 @@ def start_after():
             Arduino.write(encode_serial_data(MOTER_ORDER))
             moter_time += MOTER_TIME
 
-        # if seconds == D2_TIME:
-        # Wait for a coherent pair of frames: depth and color
-        # frames = pipeline.wait_for_frames()
-        # color_frame = frames.get_color_frame()
+        if seconds == D2_TIME:
+            pipeline = rs.pipeline()
+            config = rs.config()
+            config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+            config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+            profile = pipeline.start(config)
 
-        # # Convert images to numpy arrays
-        # color_image = np.asanyarray(color_frame.get_data())
-        # cv2.imwrite('./color_sensor.jpg', color_image)
+            depth_sensor = profile.get_device().first_depth_sensor()
+            depth_sensor.set_option(rs.option.depth_units, 0.001)
 
-        # files = {'mushroom': ('mushroom12.jpg', open(file_path, 'rb'))}
-        # data = [('mushroomId', 17)]
-        # response =requests.post(url, files=files, data=data)
-        # print(response.status_code)
-        # D2_TIME += 1000
+            frames = pipeline.wait_for_frames()
+            color_frame = frames.get_color_frame()
+
+            # Convert images to numpy arrays
+            color_image = np.asanyarray(color_frame.get_data())
+            cv2.imwrite('./color_sensor.jpg', color_image)
+
+            files = {'mushroom': ('mushroom12.jpg', open(file_path, 'rb'))}
+            data = [('mushroomId', 17)]
+            response = requests.post(url, files=files, data=data)
+            print(response.status_code)
+            D2_TIME += 1000
 
         # 끝내기 데이터 오면 break 후 리턴
 
